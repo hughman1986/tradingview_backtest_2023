@@ -1,0 +1,49 @@
+﻿ 
+//@version=4
+strategy("MACD策略")
+
+// MACD
+fastLength = input(12, minval=1)
+slowLength = input(26, minval=1)
+macdLength = input(9, minval=1)
+
+fastMA = ema(close, fastLength)
+slowMA = ema(close, slowLength)
+macd = fastMA - slowMA
+signal = sma(macd, macdLength)
+
+plot(macd, color=color.blue, title="MACD")
+plot(signal, color=color.red, title="Signal")
+
+// Histogram
+hist = macd - signal
+plot(hist,  color=hist > 0 ? color.green : color.red, title="Histogram", style=plot.style_columns)
+
+// EMA
+EMA200 = ema(close, 200)
+EMA100 = ema(close, 100)
+EMA50 = ema(close, 50)
+
+
+// 回測時間區間
+startDate = timestamp(2020, 3, 1) 
+endDate = timestamp(2022, 12, 31) 
+TimeRange = time >= startDate and time <= endDate
+
+// Strategy
+longCondition = crossover(macd, signal) and macd < 0 and close>EMA200
+shortCondition = crossunder(macd, signal) and macd > 0 and close<EMA200
+ 
+// 停損條件
+//stopLossCondition = close < close[1] * (1 - 0.1)
+stopLossCondition = crossunder(macd, signal) and macd < 0 or  crossover(macd, signal) and macd > 0  
+
+// strategy.entry("Long", strategy.long, stop=low, when=longCondition and TimeRange)
+// strategy.entry("Short", strategy.short,  stop=high, when = shortCondition and TimeRange)
+
+strategy.entry("Long", strategy.long, when=longCondition and TimeRange)
+strategy.entry("Short", strategy.short, when = shortCondition and TimeRange)
+
+strategy.close("Long", when = shortCondition or stopLossCondition)
+strategy.close("Short", when = longCondition or stopLossCondition)
+  

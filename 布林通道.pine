@@ -1,0 +1,24 @@
+//@version=4
+// Bollinger Band Trend Strategy
+// Developed by hkex
+
+study("Bollinger Band Trend Strategy", overlay=true)
+
+// Bollinger Band
+length = input(20, minval=1)
+k = input(2.0, minval=0.001, maxval=50)
+
+up = sma(high, length) + k * stdev(high, length)
+dn = sma(low, length) - k * stdev(low, length)
+
+// Plot Bollinger Band
+plot(up, color=color.red, title="Upper Band")
+plot(dn, color=color.blue, title="Lower Band")
+
+// Trading
+longCondition = crossover(close, dn)
+shortCondition = crossunder(close, up)
+
+// Plot signals
+plotshape(longCondition, style=shape.triangleup, color=color.green, location=location.belowbar, title="Buy")
+plotshape(shortCondition, style=shape.triangledown, color=color.red, location=location.abovebar, title="Sell")
