@@ -1,0 +1,49 @@
+
+//@version=4
+strategy("Fixed Percent Stop Loss & Take Profit %", overlay=true)
+// source https://tw.tradingview.com/script/00WHGEoc-Fixed-Percent-Stop-Loss-Take-Profit/
+
+// Moving Averages to get some example trades generated
+fastEMA = ema(close, 20)
+slowEMA = ema(close, 60)
+// Plot moving averages
+plot(series=fastEMA, color=color.teal)
+plot(series=slowEMA, color=color.orange)
+
+
+long = crossover(fastEMA, slowEMA)
+short = crossunder(fastEMA, slowEMA)
+
+// The Fixed Percent Stop Loss Code 固定百分比停損與停利 
+// User Options to Change Inputs (%)
+stopPer = input(3.0, title='Stop Loss %', type=input.float) / 100
+takePer = input(10.0, title='Take Profit %', type=input.float) / 100
+
+// 做多 
+strategy.entry("LONG", strategy.long, when=long)
+
+// Determine where you've entered and in what direction
+longStop = strategy.position_avg_price * (1 - stopPer)
+longTake = strategy.position_avg_price * (1 + takePer)
+
+if strategy.position_size > 0 
+    strategy.exit(id="Close Long", stop=longStop, limit=longTake)
+
+// PLOT FIXED SLTP LINE
+plot(strategy.position_size > 0 ? longStop : na, style=plot.style_linebr, color=color.red, linewidth=1, title="Long Fixed SL")
+plot(strategy.position_size > 0 ? longTake : na, style=plot.style_linebr, color=color.green, linewidth=1, title="Long Take Profit")
+
+
+// 做空 
+strategy.entry("SHORT", strategy.short, when=short)
+
+// Determine where you've entered and in what direction
+shortStop = strategy.position_avg_price * (1 + stopPer)
+shortTake = strategy.position_avg_price * (1 - takePer)
+
+if strategy.position_size < 0 
+    strategy.exit(id="Close Short", stop = shortStop , limit = shortTake)
+    
+// PLOT FIXED SLTP LINE
+plot(strategy.position_size < 0 ? shortStop : na, style=plot.style_linebr, color=color.red, linewidth=1, title="Short Fixed SL")
+plot(strategy.position_size < 0 ? shortTake : na, style=plot.style_linebr, color=color.green, linewidth=1, title="Short Take Profit")
