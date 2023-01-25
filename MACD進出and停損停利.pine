@@ -1,0 +1,80 @@
+
+//@version=4
+strategy("MACD進出策略", overlay=true)
+
+// ====MACD====
+// MACD-快慢線
+fastLength = input(12, minval=1)
+slowLength = input(26, minval=1)
+macdLength = input(9, minval=1)
+
+fastMA = ema(close, fastLength)
+slowMA = ema(close, slowLength)
+macd = fastMA - slowMA
+signal = sma(macd, macdLength)
+
+// MACD-Histogram
+hist = macd - signal
+
+// ====繪製MACD====
+// plot(macd, color=color.blue, title="MACD")
+// plot(signal, color=color.red, title="Signal")
+// plot(hist,  color=hist > 0 ? color.green : color.red, title="Histogram", style=plot.style_columns)
+
+// ====大趨勢判斷====
+// EMA
+EMA200 = ema(close, 200)
+EMA100 = ema(close, 100)
+EMA50 = ema(close, 50)
+plot(EMA200, color=color.red, title = "EMA200" )
+plot(EMA100, color=color.orange, title = "EMA100" )
+plot(EMA50, color=color.yellow, title = "EMA50" )
+
+
+// ====多空條件====
+// Strategy
+long = crossover(macd, signal) and (macd < 0) and (close > EMA50)
+short = crossunder(macd, signal) and (macd > 0) and (close < EMA50)
+
+
+// ====進出場/停損停利====
+// The Fixed Percent Stop Loss Code 固定百分比停損與停利 
+// User Options to Change Inputs (%)
+stopPer = input(3.0, title='Stop Loss %', type=input.float) / 100
+takePer = input(10.0, title='Take Profit %', type=input.float) / 100
+
+
+// 回測時間區間
+startDate = timestamp(2021, 1, 20) 
+endDate = timestamp(2023, 1, 20) 
+TimeRange = time >= startDate and time <= endDate
+
+
+// 做多 
+strategy.entry("LONG", strategy.long, when = long and TimeRange)
+
+// Determine where you've entered and in what direction
+longStop = strategy.position_avg_price * (1 - stopPer)
+longTake = strategy.position_avg_price * (1 + takePer)
+
+if strategy.position_size > 0  
+    strategy.exit(id="Close Long", stop = longStop, limit = longTake)
+
+// // PLOT FIXED SLTP LINE
+// plot(strategy.position_size > 0 ? longStop : na, style=plot.style_linebr, color=color.red, linewidth=1, title="Long Fixed SL")
+// plot(strategy.position_size > 0 ? longTake : na, style=plot.style_linebr, color=color.green, linewidth=1, title="Long Take Profit")
+
+
+// 做空 
+strategy.entry("SHORT", strategy.short, when = short and TimeRange)
+
+// Determine where you've entered and in what direction
+shortStop = strategy.position_avg_price * (1 + stopPer)
+shortTake = strategy.position_avg_price * (1 - takePer)
+
+if strategy.position_size < 0  
+    strategy.exit(id="Close Short", stop = shortStop , limit = shortTake)
+
+// // PLOT FIXED SLTP LINE
+// plot(strategy.position_size < 0 ? shortStop : na, style=plot.style_linebr, color=color.red, linewidth=1, title="Short Fixed SL")
+// plot(strategy.position_size < 0 ? shortTake : na, style=plot.style_linebr, color=color.green, linewidth=1, title="Short Take Profit")
